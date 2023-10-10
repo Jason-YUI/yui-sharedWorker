@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+
+  <style>
+    .chat {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #messages {
+      height: 500px;
+      width: 300px;
+      overflow: auto;
+      border: #3498db 1px solid;
+      padding: 0 10px;
+    }
+
+    .chat__messages {
+      flex: 1;
+      overflow-y: auto;
+      margin: 4px 0;
+    }
+
+    .sender {
+      font-size: 12px;
+      margin: 0;
+      padding: 0;
+    }
+    .sender:after {
+      content: ' :';
+    }
+
+    .message {
+      width: auto;
+      max-width: 300px;
+      background: #3498db;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat">
+  <div id="messages">
+
+  </div>
+
+  <div class="chat__input">
+    <input type="text" id="message">
+    <button id="send">发送</button>
+  </div>
+</div>
+
+<script>
+
+  let uuid = ''
+  const sharedWorker = new SharedWorker('sharedWorker.js');
+
+  sharedWorker.port.onmessage = (e) => {
+    if (e.data.type === 'connect') {
+      uuid = e.data.uuid;
+      alert('连接成功')
+      return;
+    }
+
+    const messageDom = `
+         <div class="chat__messages">
+            <p class="sender" ${uuid === e.data.sender ? 'style="color: #165DFF"' : ""}>${e.data.sender}</p>
+            <p class="message">${e.data.message}</p>
+         </div>
+        `
+    document.getElementById('messages').insertAdjacentHTML('beforeend', messageDom);
+
+    // 滚动到底部
+    document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+  };
+
+  document.getElementById('send').addEventListener('click', () => {
+    const message = document.getElementById('message').value;
+    if (!message) {
+      alert('请输入内容')
+      return;
+    }
+
+    const data = {
+      type: 'message',
+      message: message,
+    }
+    sharedWorker.port.postMessage(data);
+    document.getElementById('message').value = '';
+  });
+</script>
+</body>
+</html>
